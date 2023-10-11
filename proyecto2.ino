@@ -37,6 +37,7 @@ int DPINS[] = {PB_0, PB_1, PB_2, PB_3, PB_4, PB_5, PB_6, PB_7};
 int state = 0;
 int start = 0;
 int btn = 1;
+int btn2 = 1;
 int y = 0;
 int coordx, coordy;
 int fnty = 240;
@@ -61,10 +62,9 @@ void LCD_CMD(uint8_t cmd);
 void LCD_DATA(uint8_t data);
 void SetWindows(unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2);
 void LCD_Clear(unsigned int c);
+void beep(int note, int duration);
 void H_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c);
 void V_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c);
-void Rect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c);
-void FillRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c);
 void LCD_Print(String text, int x, int y, int fontSize, int color, int background);
 void mover_fantasma(void);
 void LCD_Bitmap(unsigned int x, unsigned int y, unsigned int width, unsigned int height, unsigned char bitmap[]);
@@ -155,6 +155,7 @@ void loop() {
         LCD_Sprite(coordx, coordy, 32, 32, pacman, 2, indx_pac, 0, 0);
         V_line(coordx - 1, coordy, 32, 0x00);
         btn = digitalRead(PF_4);
+        btn2 = digitalRead(PF_0);
 
         if (state == 3) {
           if(jugador == 0){
@@ -165,7 +166,7 @@ void loop() {
             }
           goto gameover;
         }
-        //Sentencia para que se haga el movimiento mientras el botón este presionado
+        //Movimiento mientras el botón este presionado
         while (btn == 0) {
           btn = digitalRead(PF_4);
           //Programación defensiva para que el satélite no salga de la pantalla
@@ -180,53 +181,28 @@ void loop() {
             coordy = 1;
           }
           mover_fantasma();
-          //Casos para los movimientos del satélite
-          switch ( indx_pac) {
-            //Caso para que el satélite suba
-            case 0:
-              LCD_Sprite(coordx, coordy--, 32, 32, pacman, 2, indx_pac, 0, 0);
-              V_line(coordx + 32, coordy, 32, 0x00);
-              break;
-            //Caso para que el satélite vaya a la esquina superior izquierda
-            case 1:
-              LCD_Sprite(coordx--, coordy--, 32, 32, pacman, 2, indx_pac, 0, 0);
-              break;
-            //Caso para que el satélite vaya a la izquierda
-            case 2:
-              LCD_Sprite(coordx--, coordy, 32, 32, pacman, 2, indx_pac, 0, 0);
-              V_line(coordx + 32, coordy, 32, 0x00);
-              break;
-            //Caso para que el satélite a la esquina inferior izquierda
-            case 3:
-              LCD_Sprite(coordx--, coordy++, 32, 32, pacman, 2, indx_pac, 0, 0);
-              H_line(coordx, coordy - 1, 32, 0x00);
-              break;
-            //Caso para que el satélite baje
-            case 4:
-              LCD_Sprite(coordx, coordy++, 32, 32, pacman, 2, indx_pac, 0, 0);
-              break;
-            //Caso para que el satélite vaya a la esquina inferior derecha
-            case 5:
-              LCD_Sprite(coordx++, coordy++, 32, 32, pacman, 2, indx_pac, 0, 0);
-              V_line(coordx - 1, coordy, 32, 0x00);
-              H_line(coordx, coordy - 1, 32, 0x00);
-              break;
-            //Caso para que el satélite vaya a la derecha
-            case 6:
-              LCD_Sprite(coordx++, coordy, 32, 32, pacman, 2, indx_pac, 0, 0);
-              break;
-            //Caso para que el satélite vaya a la esquina superior derecha
-            case 7:
-              LCD_Sprite(coordx++, coordy--, 32, 32, pacman, 2, indx_pac, 0, 0);
-              V_line(coordx - 1, coordy, 32, 0x00);
-              H_line(coordx, coordy + 32, 32, 0x00);
-              break;
-            //Caso por defecto
-            default:
-              break;
+          LCD_Sprite(coordx--, coordy, 32, 32, pacman, 2, indx_pac, 1, 0);  //mover pacman a la derecha
+          }
+          
+          while (btn2 == 0) {
+          btn2 = digitalRead(PF_0);
+          //Programación defensiva para que el satélite no salga de la pantalla
+          if (coordx > 255) {
+            coordx = 255;
+          } else if (coordx < 1) {
+            coordx = 1;
+          }
+          if (coordy > 208) {
+            coordy = 208;
+          } else if (coordy < 1) {
+            coordy = 1;
+          }
+          mover_fantasma();
+          V_line(coordx + 32, coordy, 32, 0x00);
+          LCD_Sprite(coordx++, coordy, 32, 32, pacman, 2, indx_pac, 0, 0);  //mover a pacman a la derecha
           }
         }
-      }
+      
 gameover:
       break;
     //Caso de cuando se ha finalizado el juego
@@ -270,8 +246,8 @@ gameover:
             menu_principal();
             delay(500);
       }
-      break;
       }
+      break;
   }
 }
 
@@ -499,22 +475,6 @@ void V_line(unsigned int x, unsigned int y, unsigned int l, unsigned int c) {
   digitalWrite(CS, HIGH);
 }
 
-// Función para dibujar un rectángulo - parámetros ( coordenada x, cordenada y, ancho, alto, color)
-void Rect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c) {
-  H_line(x  , y  , w, c);
-  H_line(x  , y + h, w, c);
-  V_line(x  , y  , h, c);
-  V_line(x + w, y  , h, c);
-}
-
-// Función para dibujar un rectángulo relleno - parámetros ( coordenada x, cordenada y, ancho, alto, color)
-void FillRect(unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int c) {
-  unsigned int i;
-  for (i = 0; i < h; i++) {
-    H_line(x  , y  , w, c);
-    H_line(x  , y + i, w, c);
-  }
-}
 
 // Función para dibujar texto - parámetros ( texto, coordenada x, cordenada y, color, background)
 void LCD_Print(String text, int x, int y, int fontSize, int color, int background) {
@@ -626,3 +586,4 @@ void LCD_Sprite(int x, int y, int width, int height, unsigned char bitmap[], int
   }
   digitalWrite(CS, HIGH);
 }
+
