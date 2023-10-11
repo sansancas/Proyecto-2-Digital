@@ -1,0 +1,24 @@
+#include <BluetoothSerial.h>
+
+BluetoothSerial SerialBT;
+
+int button1Pin = 14; // Pin para el botón 1
+int button2Pin = 15; // Pin para el botón 2
+
+void setup() {
+    SerialBT.begin("ESP32_Control"); // Nombre del emisor
+    pinMode(button1Pin, INPUT);
+    pinMode(button2Pin, INPUT);
+}
+
+void loop() {
+    if (digitalRead(button1Pin) == HIGH) {
+        SerialBT.println("Button1 Pressed");
+        delay(1000); // Debouncing
+    }
+
+    if (digitalRead(button2Pin) == HIGH) {
+        SerialBT.println("Button2 Pressed");
+        delay(1000); // Debouncing
+    }
+}
